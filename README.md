@@ -19,12 +19,15 @@ will be attached with memo we want to relloc. Here I will give you an example:
     
     
     Suppose, the user want to use malloc to allocate for 8 bytes of memory. May be we will allocate 10 bytes memo using system call
-    From the 10 bytes, 8 bytes will be used for the user and another 2 bytes will be used as bookkeeping to record this allocation.
+    From the 10 bytes, 8 bytes will be used for the user and another 2 bytes will be used as bookkeeping to record this allocation.  
     
 
 Thirdly, because bookkeeping record is attached with requests. This means they can not be stored consecutively. Therefore, we can not  
 data structure like array to store it. A good data structure to fit solve this problem is Linked List or we can even use double Linked  
 List.
+
+
+# LinkedList in C
 
 
 
