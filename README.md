@@ -104,6 +104,27 @@ not change it.
     }
 
 
+# Peformance test
+
+We are gonna to use framentation to test the space performance of other algorithm. Therefore, we have to know two informations:  
+
+    1. the entire heap memo
+            unsigned long get_data_segment_size();  //in bytes
+            
+    2. free space: which is the free space in the heap and the memo used for the meta data
+            unsignedlongget_data_segment_free_space_size();     //inbytes 
+            
+## entire heap memo  
+We could maintain a global which will hold the entire heap memo to date. Every time we use sbrk() we are gonna to add the changes
+to this global variable.
+
+## free space:
+free space comes from the fact that:  
+    1. meta-data: which is the size of nodes.  
+            Every time we create, merge and split nodes, we have to conside about change the free space
+    2. when we call free(), we deacllocate some memo and this will count to free space.
+
+
 # Reference:
 
 ## sbrk
@@ -116,6 +137,7 @@ used to change the data segment size of the program.
     On error, (void *) -1 is returned, and errno is set to ENOMEM.  
 
     intptr_t: signed integer type capable of holding a pointer to void.  
+    
 
 
 
