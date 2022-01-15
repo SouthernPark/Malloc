@@ -103,6 +103,7 @@ not change it.
         Now we have:  
         2B(node)|3B(occupied)|1B(available).  
         The last 1B available can not be recorded, because it can not even fit the node.  
+        The remaining free space is too small to keep track of.
         
     
 
