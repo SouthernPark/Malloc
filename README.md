@@ -91,7 +91,20 @@ not change it.
             
             //3. return the address of the allocated memo 
         }  
-
+    
+        -------
+        We want to use sbrk() as less as possible, because we want to keep the size of the heap as small as possible. This means
+        we have to use bookkeeping to check if there is a fit already in the heap. When we find the fit, we might have to split the 
+        node. But there are some conner cases when spliting the nodes.  
+        Corner Case:
+        For example, the user want to request a 3 bytes memo in the heap. We find a fit with 4 bytes in the bookkeeping. Let us assume
+        size of the node of the linked list is 2 bytes.
+        Record: 2B(node)|4B(available memo).
+        Now we have:  
+        2B(node)|3B(occupied)|1B(available).  
+        The last 1B available can not be recorded, because it can not even fit the node.  
+        
+    
 
 ## free
 
