@@ -236,7 +236,7 @@ void * splitNode(node_t * n, size_t size) {
   }
 
   //return the address the user requests
-  return (void *)(n + sizeof(node_t));
+  return ptrByteMove(n, sizeof(node_t), 1);
 }
 
 /*                                                                   
