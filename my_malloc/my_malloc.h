@@ -34,7 +34,7 @@ typedef struct node_tag {
   //how many bytes requested by the user
   size_t size;
   //1-> these bytes are used, 0-> available for use
-  char used;
+  int used;
 } node_t;
 
 /* Anxiliary Function */
