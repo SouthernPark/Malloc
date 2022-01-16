@@ -101,12 +101,12 @@ node_t * best_fit(size_t size) {
 //return the pointer to the node
 node_t * makeSpaceForNode() {
   //1. calling the sbrk to allocate sizeof(node_t) bytes
-  void * cur_brk = my_sbrk(sizeof(node_t));
+  void * prev_brk = my_sbrk(sizeof(node_t));
 
   free_space += sizeof(node_t);  //node space is counted as free space
 
-  //2. return the pointer to the beginning of the allocated space
-  return (node_t *)cur_brk - sizeof(node_t);
+  //2. return the pointer to the beginning of the node
+  return (node_t *)prev_brk;
 }
 
 //this function is used when malloc is called for the first time
