@@ -148,6 +148,8 @@ used to change the data segment size of the program.
     On success, sbrk() returns the previous program break. (If the break was increased,  
     then this value is a pointer to the start of the newly allocated memory).  
     
+    The previous means the address before we move the program break.
+    
     On error, (void *) -1 is returned, and errno is set to ENOMEM.  
 
     intptr_t: signed integer type capable of holding a pointer to void.  
