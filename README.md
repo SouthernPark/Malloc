@@ -148,15 +148,48 @@ used to change the data segment size of the program.
     On success, sbrk() returns the previous program break. (If the break was increased,  
     then this value is a pointer to the start of the newly allocated memory).  
     
-    The previous means the address before we move the program break.
     
     On error, (void *) -1 is returned, and errno is set to ENOMEM.  
 
     intptr_t: signed integer type capable of holding a pointer to void.  
     
 
+# Misunderstanding
 
+## sbrk()
+    
+    sbrk() returns the previous program break.  
+    The previous means the address before we move the program break.  
 
+## struct padding
+
+    The structure of node_t is:
+    
+    type struct node_tag{       
+        node_t* next;   (8 bytes)           
+        node_t* prev;   (8 bytes)        
+        size_t size;    (8 bytes)        
+        char used;      (1 bytes)        
+    } node_t;                   
+    
+    
+    But the actually of node_t is 32 bytes.  
+    
+    The last field is padded to alig with the other fields to become some  
+    kind od rectangle like fields.  
+
+## pointer arithmetic
+    
+    assume we have node_t * ptr, we want to move to forward 8 bytes.
+    ptr -= 8 is not correct, because the movement unit now is sizeof(node_t).
+    The sizeof(node_t) is 32. This means we actually moves for 8*32 bytes forward.
+    
+    To fix this we have to firstly convert the node_t * to char *  
+    After bytes moving, we convert the pointer back.
+    
+    We can create a function do this dirty thing.  
+    
+    
 
 
 

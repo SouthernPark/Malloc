@@ -27,15 +27,16 @@ int main(int argc, char * argv[]) {
   int char_size = sizeof(int);
 
   //test sbrk
-  void * p1 = sbrk(0);
-  void * p2 = sbrk(4);
-  void * p3 = sbrk(0);
+  //void * p1 = sbrk(0);
+  //void * p2 = sbrk(4);
+  //void * p3 = sbrk(0);
 
   size = 4;
   expected_sum += size * size;
   array[0] = (int *)MALLOC(size * sizeof(int));
   //mytest
-  node_t * n1 = (node_t *)array[0] - sizeof(node_t);
+  node_t * n1 = (node_t *)array[0];
+  n1 -= node_size;
   for (i = 0; i < size; i++) {
     array[0][i] = size;
   }  //for i
