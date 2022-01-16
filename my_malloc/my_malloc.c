@@ -42,7 +42,7 @@ void * ff_malloc(size_t size) {
 }
 
 void ff_free(void * ptr) {
-  free(ptr);
+  my_free(ptr);
 }
 
 void * bf_malloc(size_t size) {
@@ -97,6 +97,10 @@ node_t * best_fit(size_t size) {
   return best;
 }
 
+void bf_free(void * ptr) {
+  my_free(ptr);
+}
+
 //This function will allocate new space to hold the node
 //return the pointer to the node
 node_t * makeSpaceForNode() {
@@ -116,7 +120,7 @@ void * initLL(size_t size) {
   node_t * n = makeSpaceForNode();
 
   //2. make space for the request
-  my_sbrk(size);
+  void * res = my_sbrk(size);
   //3. set up the node
   n->prev = NULL;
   n->next = NULL;
@@ -126,7 +130,7 @@ void * initLL(size_t size) {
   head = n;
   tail = n;
 
-  return (void *)(n + sizeof(node_t));
+  return res;
 }
 
 /*
@@ -167,7 +171,7 @@ void * incr_heap(size_t size) {
   node_t * n = makeSpaceForNode();
 
   //2. make space for the user
-  my_sbrk(size);
+  void * res = my_sbrk(size);
   n->size = size;
   n->used = 1;
 
@@ -175,7 +179,7 @@ void * incr_heap(size_t size) {
   addToTail(n);
 
   //4. return the address requested by the user
-  return (void *)(n + sizeof(node_t));
+  return res;
 }
 
 void addToTail(node_t * n) {
@@ -202,7 +206,7 @@ void * splitNode(node_t * n, size_t size) {
     //we can record the splited node
 
     //get the pointer of the splited node
-    node_t * split = (node_t *)(n + sizeof(node_t) + size);
+    node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
     //insert split between n and n->next
     split->prev = n;
     split->next = n->next;
@@ -252,9 +256,9 @@ This function will help us free the allocated memo
 1.When there is free node next, we will merge the free node with current node
 2.When there is free node previous, we will merge this node with the previous node  
 */
-void free(void * ptr) {
+void my_free(void * ptr) {
   //1. Get the corresponding node pointer
-  node_t * n = (node_t *)ptr - sizeof(node_t);
+  node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
   //2. set the status of the node to unused
   n->used = 0;
   //because node n is freed, increase the free space
@@ -294,4 +298,22 @@ void merge(node_t * n, node_t * next) {
 
   //free_space deos not change, because the removed node
   //is also free space
+}
+
+/*                                                                    
+This function will move the ptr in move bytes                         
+*/
+
+void * ptrByteMove(void * ptr, size_t move, int minus) {
+  //1. firstly convert the pointer to pointer type with size 1
+  char * res = (char *)ptr;
+
+  if (minus == -1) {
+    res -= move;
+  }
+  else {
+    res += move;
+  }
+
+  return (void *)res;
 }

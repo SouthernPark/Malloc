@@ -116,7 +116,13 @@ This function will help us free the allocated memo
 2.When there is free node previous, we will merge this node with the previous node  
 
 */
-void free(void * ptr);
+void my_free(void * ptr);
 
 //next node will be merged into n node
 void merge(node_t * n, node_t * next);
+
+/*
+This function will move the ptr in move bytes
+*/
+
+void * ptrByteMove(void * ptr, size_t move, int minus);

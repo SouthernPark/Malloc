@@ -20,23 +20,11 @@ int main(int argc, char * argv[]) {
   int expected_sum = 0;
   int * array[NUM_ITEMS];
 
-  int node_size = sizeof(node_t);
-  int pointer_size = sizeof(node_t *);
-  int void_pointer_size = sizeof(void *);
-  int size_ = sizeof(size_t);
-  int char_size = sizeof(int);
-
-  //test sbrk
-  //void * p1 = sbrk(0);
-  //void * p2 = sbrk(4);
-  //void * p3 = sbrk(0);
-
   size = 4;
   expected_sum += size * size;
   array[0] = (int *)MALLOC(size * sizeof(int));
   //mytest
-  node_t * n1 = (node_t *)array[0];
-  n1 -= node_size;
+  node_t * n1 = ptrByteMove(array[0], sizeof(node_t), -1);
   for (i = 0; i < size; i++) {
     array[0][i] = size;
   }  //for i
@@ -49,7 +37,7 @@ int main(int argc, char * argv[]) {
   array[1] = (int *)MALLOC(size * sizeof(int));
 
   //mytest
-  node_t * n2 = (node_t *)array[1] - sizeof(node_t);
+  node_t * n2 = ptrByteMove(array[1], sizeof(node_t), -1);
 
   for (i = 0; i < size; i++) {
     array[1][i] = size;
@@ -62,7 +50,8 @@ int main(int argc, char * argv[]) {
   expected_sum += size * size;
   array[2] = (int *)MALLOC(size * sizeof(int));
   //mytest
-  node_t * n3 = (node_t *)array[2] - sizeof(node_t);
+  node_t * n3 = ptrByteMove(array[2], sizeof(node_t), -1);
+
   for (i = 0; i < size; i++) {
     array[2][i] = size;
   }  //for i
@@ -74,7 +63,8 @@ int main(int argc, char * argv[]) {
   expected_sum += size * size;
   array[3] = (int *)MALLOC(size * sizeof(int));
   //mytest
-  node_t * n4 = (node_t *)array[3] - sizeof(node_t);
+
+  node_t * n4 = ptrByteMove(array[3], sizeof(node_t), -1);
 
   for (i = 0; i < size; i++) {
     array[3][i] = size;
