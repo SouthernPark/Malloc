@@ -189,7 +189,92 @@ used to change the data segment size of the program.
     
     We can create a function do this dirty thing.  
     
+
+# Performance Improve
+
+When searching for a fit we will loop through all the Linked List node, we know  
+that these nodes contain a lot node that is not free.  
+
+To solve this problem, I am gonna to use free head and free tail pointers to define  
+a list of free nodes.  
+
+The problem here is, when we free a node, we have to merge it with its previous node  
+or its last node. Therefore, we still have to maintain the pointes prev and next.  
+
+But we have to record the free Linked list, to solve this problem, we have to add  
+two additional pointers inside of the node struct which are free_head and free_tail.  
+
+
     
+    
+    type struct node_tag{                       
+        node_t* next,   (8 bytes)               
+        node_t* prev,   (8 bytes)               
+        node_t* free_next,
+        node_t* free_prev,
+        size_t size,    (8 bytes)               
+        char used      (1 bytes)               
+    } node_t;                                   
 
 
 
+## Implement
+
+    1. we have to change the NODE_SIZE from 32 to 48.  
+    
+    2. When we malloc a node, we firstly check if there is an elment
+       matched in the free list. 
+       
+       a. There is a match in the free list.
+           Node match;
+           1) The match is big enough to split.
+               Create the split node. (set prev, next size ..)
+               Replace the match node with split node in the free list;
+           
+           2) The match is too small to split.
+               simple remove the node from the free list.
+       
+       b. There is not a match.
+       
+           We will increase the heap to meat the user's requirements.
+           
+           create new nodes, create new size space.
+           
+           New nodes will be added at the end of tail.
+           
+
+    3. When we want to free a node say n.
+       
+       
+      A. If both the prev and next node of n are not free.  
+          
+          We just add node n to the tail of free list and then return.   
+      
+      
+      B. else, We firstly check if the node after n which is n->next is free.  
+        
+        a. if it is free,
+            We merge the next node the node n.  
+            1) Set the size of node n.
+            2) Replace next with n in the free list.  
+                n->free_next = next->free_next;
+                n->free_prev = next->free_prev;
+                
+                next->free_prev->free_next = n;
+                next->free_next->free_prev = n;
+                
+                //corner case, next is the free_tail, move free_tail
+                
+            3) Remove the next node from the list  
+                n->next = next->next;
+                n->prev = next->prev;
+                
+                next->prev->next = n;
+                next->next->prev = n;
+
+
+      C. We then check whether the node before n which is n->prev is free.  
+          a. if it is free,  
+              
+              We merge the prev with n.  
+              
