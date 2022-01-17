@@ -190,6 +190,28 @@ used to change the data segment size of the program.
     We can create a function do this dirty thing.  
     
     
+# Improvement
+
+With the increase of node, we have to loop through the linkedlist to find the fit.  
+During the traversal, we may find that most of the nodes are actually used.  
+This will waste some time. A good way will be keep a list that will recorded the  
+nodes that are freed.  
+    
+    
+Therefore, we can have the following data structure:
 
 
-
+    type struct node_tag{                       
+        node_t* next;   (8 bytes)               
+        node_t* prev;   (8 bytes)               
+        node_t * free_next (8 bytes)            
+        node_t * free_prev (8 bytes)            
+        size_t size;    (8 bytes)               
+        char used;      (1 bytes)               
+    } node_t;                                   
+    
+    we will use global pointer free_head and free_tail to record the list.  
+    
+    
+    
+    

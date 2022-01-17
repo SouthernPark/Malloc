@@ -12,6 +12,10 @@ status of heap memo
 //global variables
 node_t * head = NULL;
 node_t * tail = NULL;
+
+node_t * free_head = NULL;
+node_t * free_tail = NULL;
+
 unsigned long heap_size = 0;
 unsigned long free_space = 0;
 
@@ -203,11 +207,12 @@ space the user requested. Here are two cases:
 */
 void * splitNode(node_t * n, size_t size) {
   //1. check whether the splited node is too small to record
-  if (n->size - size > sizeof(node_t)) {
+  if (n->size - size > NODE_SIZE) {
     //we can record the splited node
 
     //get the pointer of the splited node
-    node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
+    node_t * split = (node_t *)((char *)n + size + NODE_SIZE);
+    //node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
     //insert split between n and n->next
     split->prev = n;
     split->next = n->next;
@@ -223,7 +228,7 @@ void * splitNode(node_t * n, size_t size) {
     }
 
     //change the size and used property of n and split
-    split->size = n->size - size - sizeof(node_t);
+    split->size = n->size - size - NODE_SIZE;
     split->used = 0;  //split is free for use
     n->size = size;
     n->used = 1;  //n is now being used
@@ -237,7 +242,8 @@ void * splitNode(node_t * n, size_t size) {
   }
 
   //return the address the user requests
-  return ptrByteMove(n, sizeof(node_t), 1);
+  //return ptrByteMove(n, sizeof(node_t), 1);
+  return (void *)((char *)n + NODE_SIZE);
 }
 
 /*                                                                   
@@ -259,7 +265,9 @@ This function will help us free the allocated memo
 */
 void my_free(void * ptr) {
   //1. Get the corresponding node pointer
-  node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
+
+  node_t * n = (node_t *)((char *)ptr - NODE_SIZE);
+
   //2. set the status of the node to unused
   n->used = 0;
   //because node n is freed, increase the free space
@@ -301,20 +309,20 @@ void merge(node_t * n, node_t * next) {
   //is also free space
 }
 
-/*                                                                    
-This function will move the ptr in move bytes                         
+/*                                              
+Return the entire head memo in bytes            
 */
 
-void * ptrByteMove(void * ptr, size_t move, int minus) {
-  //1. firstly convert the pointer to pointer type with size 1
-  char * res = (char *)ptr;
+unsigned long get_data_segment_size() {
+  return heap_size;
+}
 
-  if (minus == -1) {
-    res -= move;
-  }
-  else {
-    res += move;
-  }
+/*                                              
+Return the free space in the heap:              
+usable free space + space occupied by meta-data 
+                                                
+*/
 
-  return (void *)res;
+unsigned long get_data_segment_free_space_size() {
+  return free_space;
 }

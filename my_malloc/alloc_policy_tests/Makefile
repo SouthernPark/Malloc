@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-O3 -fPIC
-MALLOC_VERSION=FF
-WDIR=..
+MALLOC_VERSION=BF
+WDIR=/home/ql143/ECE_650/Malloc/my_malloc
 
 all: equal_size_allocs small_range_rand_allocs large_range_rand_allocs
 
