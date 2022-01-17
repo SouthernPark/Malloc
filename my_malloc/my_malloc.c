@@ -12,6 +12,10 @@ status of heap memo
 //global variables
 node_t * head = NULL;
 node_t * tail = NULL;
+
+node_t * free_head = NULL;
+node_t * free_tail = NULL;
+
 unsigned long heap_size = 0;
 unsigned long free_space = 0;
 
@@ -261,8 +265,9 @@ This function will help us free the allocated memo
 */
 void my_free(void * ptr) {
   //1. Get the corresponding node pointer
-  //node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
+
   node_t * n = (node_t *)((char *)ptr - NODE_SIZE);
+
   //2. set the status of the node to unused
   n->used = 0;
   //because node n is freed, increase the free space

@@ -13,7 +13,7 @@ status of heap memo
 
 #define MAX_INT 2147483647
 
-#define NODE_SIZE 32
+#define NODE_SIZE 48
 
 //first fit
 void * ff_malloc(size_t size);
@@ -32,6 +32,9 @@ void bf_free(void * ptr);
 typedef struct node_tag {
   struct node_tag * next;
   struct node_tag * prev;
+
+  struct node_tag * free_prev;
+  struct node_tag * free_next;
 
   //how many bytes requested by the user
   size_t size;
