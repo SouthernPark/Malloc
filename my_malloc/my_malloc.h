@@ -143,3 +143,15 @@ This function will help us free the allocated memo
 
 */
 void my_free(void * ptr);
+
+/*
+Return the entire head memo in bytes
+*/
+
+unsigned long get_data_segment_size();
+
+/*
+Return the free space in the heap:
+usable free space + space occupied by meta-data
+*/
+unsigned long get_data_segment_free_space_size();

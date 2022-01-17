@@ -48,7 +48,6 @@ void * ff_malloc(size_t size) {
 void ff_free(void * ptr) {
   my_free(ptr);
 }
-
 void * bf_malloc(size_t size) {
   //1. check if empty (check whether the Linked List is null)
   if (head == NULL) {
@@ -195,6 +194,11 @@ void * incr_heap(size_t size) {
 }
 
 void listAddToTail(node_t * n) {
+  if (head == NULL) {
+    head = n;
+    tail = n;
+    return;
+  }
   n->prev = tail;
   tail->next = n;
   n->next = NULL;
@@ -205,7 +209,11 @@ void listAddToTail(node_t * n) {
 rRemove the node from the bookkeeping linked list   
 */
 void listRemove(node_t * n) {
-  if (n == head) {
+  if (n == head && n == tail) {
+    head = NULL;
+    tail = NULL;
+  }
+  else if (n == head) {
     head = head->next;
     head->prev = NULL;
     n->next = NULL;
@@ -218,8 +226,6 @@ void listRemove(node_t * n) {
   else {
     n->prev->next = n->next;
     n->next->prev = n->prev;
-    n->next = NULL;
-    n->prev = NULL;
   }
 }
 
@@ -308,18 +314,14 @@ void freeListReplace(node_t * n, node_t * target) {
   else if (target == free_head) {
     target->free_next->free_prev = n;
     free_head = n;
-    target->free_next = NULL;
   }
   else if (target == free_tail) {
     target->free_prev->free_next = n;
     free_tail = n;
-    target->free_prev = NULL;
   }
   else {
     target->free_prev->free_next = n;
     target->free_next->free_prev = n;
-    target->free_prev = NULL;
-    target->free_next = NULL;
   }
 }
 
@@ -328,23 +330,23 @@ Remove node n from the free list
 */
 
 void freeListRemove(node_t * n) {
-  if (n == free_head) {
+  if (n == free_head && n == free_tail) {
+    free_head = NULL;
+    free_tail = NULL;
+  }
+  else if (n == free_head) {
     //move free head to the next
     free_head = free_head->free_next;
     free_head->free_prev = NULL;
-    n->free_next = NULL;
   }
   else if (n == free_tail) {
     //move the free tail to its prev node
     free_tail = free_tail->free_prev;
     free_tail->free_next = NULL;
-    n->free_prev = NULL;
   }
   else {
     n->free_prev->free_next = n->free_next;
     n->free_next->free_prev = n->free_prev;
-    n->free_next = NULL;
-    n->free_prev = NULL;
   }
 }
 
@@ -353,11 +355,17 @@ Add to the tail of the free linked list
 */
 
 void freeAddTail(node_t * n) {
+  if (free_head == NULL) {
+    free_head = n;
+    free_tail = n;
+    return;
+  }
+
   n->free_prev = free_tail;
   n->free_next = NULL;
 
   free_tail->free_next = n;
-  free_tail = free_tail->free_next;
+  free_tail = n;
 }
 
 /*                                                                   
@@ -384,11 +392,11 @@ void my_free(void * ptr) {
   node_t * n = (node_t *)((char *)ptr - sizeof(node_t));
 
   //2. set the status of the node to unused
-  n->used = 0;
+
   //because node n is freed, increase the free space
   free_space += n->size;
 
-  //3. check whether the free_head os NULL
+  //3. check whether the free_head is NULL
   if (free_head == NULL) {
     free_head = n;
     free_tail = n;
@@ -403,6 +411,7 @@ void my_free(void * ptr) {
   //can not merge, both are not free
   if ((prev == NULL || prev->used == 1) && (next == NULL || next->used == 1)) {
     //add the free node to the end of free list
+    n->used = 0;
     freeAddTail(n);
     return;
   }
@@ -416,6 +425,7 @@ void my_free(void * ptr) {
     listRemove(next);
     // replace next free node in free List with n
     freeListReplace(n, next);
+    n->used = 0;
   }
 
   //4. check whether the previous node is free
@@ -425,5 +435,27 @@ void my_free(void * ptr) {
     prev->size = prev->size + sizeof(node_t) + n->size;
     //remove node n from book keeping
     listRemove(n);
+    if (n->used == 0) {
+      //n is in the free list, remove it
+      freeListRemove(n);
+    }
   }
+}
+
+/*                                              
+Return the entire head memo in bytes            
+*/
+
+unsigned long get_data_segment_size() {
+  return heap_size;
+}
+
+/*                                              
+Return the free space in the heap:              
+usable free space + space occupied by meta-data 
+                                                
+*/
+
+unsigned long get_data_segment_free_space_size() {
+  return free_space;
 }
