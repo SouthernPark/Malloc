@@ -12,6 +12,10 @@ status of heap memo
 //global variables
 node_t * head = NULL;
 node_t * tail = NULL;
+
+node_t * free_head = NULL;
+node_t * free_tail = NULL;
+
 unsigned long heap_size = 0;
 unsigned long free_space = 0;
 
@@ -83,7 +87,7 @@ node_t * best_fit(size_t size) {
   node_t * best = NULL;
   int difference = MAX_INT;
 
-  node_t * cur = head;
+  node_t * cur = free_head;
   while (cur != NULL) {
     if (cur->used == 0 && cur->size == size) {
       return cur;
@@ -92,7 +96,7 @@ node_t * best_fit(size_t size) {
       best = cur;
       difference = cur->size - size;
     }
-    cur = cur->next;
+    cur = cur->free_next;
   }
 
   return best;
@@ -110,8 +114,16 @@ node_t * makeSpaceForNode() {
 
   free_space += sizeof(node_t);  //node space is counted as free space
 
-  //2. return the pointer to the beginning of the node
-  return (node_t *)prev_brk;
+  node_t * n = (node_t *)prev_brk;
+
+  //2. set up the node
+  n->prev = NULL;
+  n->next = NULL;
+  n->free_prev = NULL;
+  n->free_next = NULL;
+
+  //3. return the pointer to the beginning of the node
+  return n;
 }
 
 //this function is used when malloc is called for the first time
@@ -122,9 +134,8 @@ void * initLL(size_t size) {
 
   //2. make space for the request
   void * res = my_sbrk(size);
-  //3. set up the node
-  n->prev = NULL;
-  n->next = NULL;
+
+  //3. set the properties of the node
   n->size = size;
   n->used = 1;
 
@@ -146,8 +157,8 @@ node_t * first_fit(size_t size) {
   if (head == NULL) {
     return NULL;
   }
-
-  node_t * cur = head;
+  //search in the free list
+  node_t * cur = free_head;
 
   while (cur != NULL) {
     if (cur->used == 0 && cur->size >= size) {
@@ -155,7 +166,7 @@ node_t * first_fit(size_t size) {
       return cur;
     }
     //else move to the next node
-    cur = cur->next;
+    cur = cur->free_next;
   }
   //we are here beacause cur == NULL, which means there is no fit
 
@@ -177,17 +188,57 @@ void * incr_heap(size_t size) {
   n->used = 1;
 
   //3. add the node to the tail of Linked List
-  addToTail(n);
+  listAddToTail(n);
 
   //4. return the address requested by the user
   return res;
 }
 
-void addToTail(node_t * n) {
+void listAddToTail(node_t * n) {
   n->prev = tail;
   tail->next = n;
   n->next = NULL;
   tail = n;
+}
+
+/*                                                  
+rRemove the node from the bookkeeping linked list   
+*/
+void listRemove(node_t * n) {
+  if (n == head) {
+    head = head->next;
+    head->prev = NULL;
+    n->next = NULL;
+  }
+  else if (n == tail) {
+    tail = tail->prev;
+    tail->next = NULL;
+    n->prev = NULL;
+  }
+  else {
+    n->prev->next = n->next;
+    n->next->prev = n->prev;
+    n->next = NULL;
+    n->prev = NULL;
+  }
+}
+
+/*
+Insert node n after target
+*/
+
+void listInsert(node_t * n, node_t * target) {
+  if (target == tail) {
+    //target is the tail
+    listAddToTail(n);
+  }
+  else {
+    //target is not the tail
+    n->prev = target;
+    n->next = target->next;
+    target->next->prev = n;
+    target->next = n;
+  }
 }
 
 /*                                                                            
@@ -204,40 +255,109 @@ space the user requested. Here are two cases:
 void * splitNode(node_t * n, size_t size) {
   //1. check whether the splited node is too small to record
   if (n->size - size > sizeof(node_t)) {
-    //we can record the splited node
+    //We can split
 
-    //get the pointer of the splited node
-    node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
-    //insert split between n and n->next
-    split->prev = n;
-    split->next = n->next;
+    //a. get the pointer of the splited node
+    // node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
+    node_t * split = (node_t *)((char *)n + sizeof(node_t) + size);
 
-    n->next = split;
-    if (split->next == NULL) {
-      //split now is the tail
-      tail = split;
-    }
-    else {
-      //split is not the tail, change the prev pointer of its next node
-      split->next->prev = split;
-    }
+    //b. insert split after n in the bookeeping
+    listInsert(split, n);
 
-    //change the size and used property of n and split
+    //c. change the size and used property of n and split
+
     split->size = n->size - size - sizeof(node_t);
     split->used = 0;  //split is free for use
     n->size = size;
     n->used = 1;  //n is now being used
 
+    //e. replace node n in free list with node split
+    freeListReplace(split, n);
+
     free_space -= size;
   }
   else {
-    //first case: do not need to split
+    //Too small to split
+
+    //1. set to used
     n->used = 1;
+
+    //2. remove free node n from free list
+    freeListRemove(n);
     free_space -= n->size;
   }
 
   //return the address the user requests
-  return ptrByteMove(n, sizeof(node_t), 1);
+  //return ptrByteMove(n, sizeof(node_t), 1);
+  return (node_t *)((char *)n + sizeof(node_t));
+}
+
+/*
+Replace the node target in the free List with node n
+*/
+
+void freeListReplace(node_t * n, node_t * target) {
+  n->free_next = target->free_next;
+  n->free_prev = target->free_prev;
+
+  //target is the only element in the free list
+  if (target == free_head && target == free_tail) {
+    free_head = n;
+    free_tail = n;
+  }
+  else if (target == free_head) {
+    target->free_next->free_prev = n;
+    free_head = n;
+    target->free_next = NULL;
+  }
+  else if (target == free_tail) {
+    target->free_prev->free_next = n;
+    free_tail = n;
+    target->free_prev = NULL;
+  }
+  else {
+    target->free_prev->free_next = n;
+    target->free_next->free_prev = n;
+    target->free_prev = NULL;
+    target->free_next = NULL;
+  }
+}
+
+/*
+Remove node n from the free list
+*/
+
+void freeListRemove(node_t * n) {
+  if (n == free_head) {
+    //move free head to the next
+    free_head = free_head->free_next;
+    free_head->free_prev = NULL;
+    n->free_next = NULL;
+  }
+  else if (n == free_tail) {
+    //move the free tail to its prev node
+    free_tail = free_tail->free_prev;
+    free_tail->free_next = NULL;
+    n->free_prev = NULL;
+  }
+  else {
+    n->free_prev->free_next = n->free_next;
+    n->free_next->free_prev = n->free_prev;
+    n->free_next = NULL;
+    n->free_prev = NULL;
+  }
+}
+
+/*
+Add to the tail of the free linked list
+*/
+
+void freeAddTail(node_t * n) {
+  n->free_prev = free_tail;
+  n->free_next = NULL;
+
+  free_tail->free_next = n;
+  free_tail = free_tail->free_next;
 }
 
 /*                                                                   
@@ -259,62 +379,51 @@ This function will help us free the allocated memo
 */
 void my_free(void * ptr) {
   //1. Get the corresponding node pointer
-  node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
+  //node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
+
+  node_t * n = (node_t *)((char *)ptr - sizeof(node_t));
+
   //2. set the status of the node to unused
   n->used = 0;
   //because node n is freed, increase the free space
   free_space += n->size;
 
-  //3. check whether the next node is free
+  //3. check whether the free_head os NULL
+  if (free_head == NULL) {
+    free_head = n;
+    free_tail = n;
+    return;
+  }
+
+  //4. check whether the prev node and next node is free
+
   node_t * next = n->next;
+  node_t * prev = n->prev;
+
+  //can not merge, both are not free
+  if ((prev == NULL || prev->used == 1) && (next == NULL || next->used == 1)) {
+    //add the free node to the end of free list
+    freeAddTail(n);
+    return;
+  }
+
+  //3. check whether the next node is free
+
   if (next != NULL && next->used == 0) {
     //merge the next node into node n
-    merge(n, next);
+    n->size = n->size + sizeof(node_t) + next->size;
+    // remove the next node from book keeping
+    listRemove(next);
+    // replace next free node in free List with n
+    freeListReplace(n, next);
   }
 
   //4. check whether the previous node is free
-  node_t * prev = n->prev;
+
   if (prev != NULL && prev->used == 0) {
     //merge node n into prev
-    merge(prev, n);
+    prev->size = prev->size + sizeof(node_t) + n->size;
+    //remove node n from book keeping
+    listRemove(n);
   }
-}
-
-//next node will be merged into n node
-void merge(node_t * n, node_t * next) {
-  //a. merge the next node with current node
-  n->size = n->size + sizeof(node_t) + next->size;
-
-  //b. remove next node from the linked list
-  if (next->next == NULL) {
-    //next is the tail
-    n->next = NULL;
-    tail = n;
-  }
-  else {
-    //next is not the tail
-    n->next = next->next;
-    next->next->prev = n;
-  }
-
-  //free_space deos not change, because the removed node
-  //is also free space
-}
-
-/*                                                                    
-This function will move the ptr in move bytes                         
-*/
-
-void * ptrByteMove(void * ptr, size_t move, int minus) {
-  //1. firstly convert the pointer to pointer type with size 1
-  char * res = (char *)ptr;
-
-  if (minus == -1) {
-    res -= move;
-  }
-  else {
-    res += move;
-  }
-
-  return (void *)res;
 }

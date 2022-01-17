@@ -31,6 +31,9 @@ typedef struct node_tag {
   struct node_tag * next;
   struct node_tag * prev;
 
+  struct node_tag * free_next;
+  struct node_tag * free_prev;
+
   //how many bytes requested by the user
   size_t size;
   //1-> these bytes are used, 0-> available for use
@@ -84,10 +87,33 @@ return the address of the space requested by the user
 void * incr_heap(size_t size);
 
 /*
-This function will help use add the node to the tail of the Linked List
+This function will help use add the node to the tail of the bookkeeping Linked List
 */
 
-void addToTail(node_t * n);
+void listAddToTail(node_t * n);
+
+/*                                           
+Insert node n after target                   
+*/
+
+void listInsert(node_t * n, node_t * target);
+
+/*
+rRemove the node from the bookkeeping linked list
+*/
+void listRemove(node_t * n);
+
+/*                                                   
+Replace the node target in the free List with node n 
+*/
+
+void freeListReplace(node_t * n, node_t * target);
+
+/*                               
+Remove node n from the free list 
+*/
+
+void freeListRemove(node_t * n);
 
 /*
 Because we find a matched space in the linkedlist, we now have to give the
@@ -117,12 +143,3 @@ This function will help us free the allocated memo
 
 */
 void my_free(void * ptr);
-
-//next node will be merged into n node
-void merge(node_t * n, node_t * next);
-
-/*
-This function will move the ptr in move bytes
-*/
-
-void * ptrByteMove(void * ptr, size_t move, int minus);
