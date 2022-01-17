@@ -13,6 +13,8 @@ status of heap memo
 
 #define MAX_INT 2147483647
 
+#define NODE_SIZE 32
+
 //first fit
 void * ff_malloc(size_t size);
 
@@ -122,7 +124,14 @@ void my_free(void * ptr);
 void merge(node_t * n, node_t * next);
 
 /*
-This function will move the ptr in move bytes
+Return the entire head memo in bytes
 */
 
-void * ptrByteMove(void * ptr, size_t move, int minus);
+unsigned long get_data_segment_size();
+
+/*
+Return the free space in the heap:
+usable free space + space occupied by meta-data
+
+*/
+unsigned long get_data_segment_free_space_size();
