@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-g -ggdb3 -fPIC
-MALLOC_VERSION=FF
+MALLOC_VERSION=BF
 WDIR=/home/ql143/ECE_650/Malloc/my_malloc
 
 all: mymalloc_test
