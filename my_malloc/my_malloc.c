@@ -116,6 +116,7 @@ node_t * makeSpaceForNode() {
   node_t * n = (node_t *)prev_brk;
 
   //2. set up the node
+
   n->prev = NULL;
   n->next = NULL;
   n->free_prev = NULL;
