@@ -3,8 +3,6 @@
 /*
 Qiangqiang Liu
 Jan/15, 2022
-
-
 malloc will be implemented with linked list data structure to bookkeeping the
 status of heap memo
 */
@@ -12,10 +10,6 @@ status of heap memo
 //global variables
 node_t * head = NULL;
 node_t * tail = NULL;
-
-node_t * free_head = NULL;
-node_t * free_tail = NULL;
-
 unsigned long heap_size = 0;
 unsigned long free_space = 0;
 
@@ -77,7 +71,6 @@ void * bf_malloc(size_t size) {
   rerturn:                                                                  
   if there is: return the pointer to the node                               
   else:  return NULL                                                        
-
 */
 node_t * best_fit(size_t size) {
   if (head == NULL) {
@@ -89,13 +82,14 @@ node_t * best_fit(size_t size) {
 
   node_t * cur = head;
   while (cur != NULL) {
-    if (cur->size == size) {
+    if (cur->used == 0 && cur->size == size) {
       return cur;
     }
-    else if (cur->size > size && cur->size - size < difference) {
+    else if (cur->used == 0 && cur->size > size && cur->size - size < difference) {
       best = cur;
       difference = cur->size - size;
     }
+    cur = cur->next;
   }
 
   return best;
@@ -264,9 +258,8 @@ This function will help us free the allocated memo
 */
 void my_free(void * ptr) {
   //1. Get the corresponding node pointer
-
+  //node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
   node_t * n = (node_t *)((char *)ptr - NODE_SIZE);
-
   //2. set the status of the node to unused
   n->used = 0;
   //because node n is freed, increase the free space

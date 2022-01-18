@@ -13,7 +13,7 @@ status of heap memo
 
 #define MAX_INT 2147483647
 
-#define NODE_SIZE 48
+#define NODE_SIZE 32
 
 //first fit
 void * ff_malloc(size_t size);
@@ -33,9 +33,6 @@ typedef struct node_tag {
   struct node_tag * next;
   struct node_tag * prev;
 
-  struct node_tag * free_prev;
-  struct node_tag * free_next;
-
   //how many bytes requested by the user
   size_t size;
   //1-> these bytes are used, 0-> available for use
@@ -47,14 +44,12 @@ typedef struct node_tag {
 /*
 This function will allocate new space to hold the node    
 return the pointer to the node                            
-
 */
 node_t * makeSpaceForNode();
 
 /*
 this function is used when malloc is called for the first time
 we init the Linked List as the current program break          
-
 */
 void * initLL(size_t size);
 
@@ -65,7 +60,6 @@ void * initLL(size_t size);
   rerturn:                                                                  
   if there is: return the pointer to the node                               
   else:  return NULL                                                        
-
 */
 node_t * first_fit(size_t size);
 
@@ -76,7 +70,6 @@ node_t * first_fit(size_t size);
   rerturn:                                                                  
   if there is: return the pointer to the node                               
   else:  return NULL                                                        
-
 */
 node_t * best_fit(size_t size);
 
@@ -84,7 +77,6 @@ node_t * best_fit(size_t size);
 this function will be called when there is no fit found in the heap 
 and we have to increase the heap to give the user requested memo    
 return the address of the space requested by the user               
-
 */
 void * incr_heap(size_t size);
 
@@ -102,7 +94,6 @@ space the user requested. Here are two cases:
        We do not split the node.
     2. Else the rest of the node is still very big, we can split the node
        And set the rest of the node as available.
-
     return: return the adrress of the space that the user requested.
 */
 void * splitNode(node_t * n, size_t size);
@@ -119,7 +110,6 @@ void * my_sbrk(intptr_t increment);
 This function will help us free the allocated memo
 1.When there is free node next, we will merge the free node with current node
 2.When there is free node previous, we will merge this node with the previous node  
-
 */
 void my_free(void * ptr);
 
@@ -135,6 +125,5 @@ unsigned long get_data_segment_size();
 /*
 Return the free space in the heap:
 usable free space + space occupied by meta-data
-
 */
 unsigned long get_data_segment_free_space_size();
