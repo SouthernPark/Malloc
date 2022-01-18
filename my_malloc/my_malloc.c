@@ -88,10 +88,10 @@ node_t * best_fit(size_t size) {
 
   node_t * cur = free_head;
   while (cur != NULL) {
-    if (cur->used == 0 && cur->size == size) {
+    if (cur->size == size) {
       return cur;
     }
-    else if (cur->used == 0 && cur->size > size && cur->size - size < difference) {
+    else if (cur->size > size && cur->size - size < difference) {
       best = cur;
       difference = cur->size - size;
     }
