@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -ggdb3 -fPIC
+CFLAGS=-O3 -fPIC
 MALLOC_VERSION=BF
 WDIR=..
 
