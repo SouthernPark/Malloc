@@ -20,7 +20,7 @@ int main(int argc, char * argv[]) {
   int expected_sum = 0;
   int * array[NUM_ITEMS];
 
-  size = 10;
+  size = 1;
   expected_sum += size * size;
   array[0] = (int *)MALLOC(size * sizeof(int));
   //mytest
@@ -34,7 +34,7 @@ int main(int argc, char * argv[]) {
     sum += array[0][i];
   }  //for i
 
-  size = 13;
+  size = 99;
   expected_sum += size * size;
   array[1] = (int *)MALLOC(size * sizeof(int));
 
@@ -62,7 +62,7 @@ int main(int argc, char * argv[]) {
     sum += array[2][i];
   }  //for i
 
-  size = 32;
+  size = 132;
   expected_sum += size * size;
   array[3] = (int *)MALLOC(size * sizeof(int));
   //mytest
@@ -79,7 +79,7 @@ int main(int argc, char * argv[]) {
   FREE(array[0]);
   FREE(array[2]);
 
-  size = 15;
+  size = 16;
   expected_sum += size * size;
   array[4] = (int *)MALLOC(size * sizeof(int));
   node_t * n5 = (node_t *)((char *)array[4] - sizeof(node_t));
@@ -105,7 +105,7 @@ int main(int argc, char * argv[]) {
   FREE(array[1]);
   FREE(array[3]);
 
-  size = 152;
+  size = 999;
   expected_sum += size * size;
   array[6] = (int *)MALLOC(size * sizeof(int));
   node_t * n7 = (node_t *)((char *)array[6] - sizeof(node_t));
@@ -130,7 +130,7 @@ int main(int argc, char * argv[]) {
 
   FREE(array[4]);
 
-  size = 10;
+  size = 456;
   expected_sum += size * size;
   array[8] = (int *)MALLOC(size * sizeof(int));
   node_t * n9 = (node_t *)((char *)array[8] - sizeof(node_t));
@@ -142,7 +142,7 @@ int main(int argc, char * argv[]) {
     sum += array[8][i];
   }  //for i
 
-  size = 32;
+  size = 1341234;
   expected_sum += size * size;
   array[9] = (int *)MALLOC(size * sizeof(int));
   for (i = 0; i < size; i++) {
