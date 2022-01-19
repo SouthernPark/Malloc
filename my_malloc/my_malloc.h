@@ -31,9 +31,6 @@ typedef struct node_tag {
   struct node_tag * next;
   struct node_tag * prev;
 
-  struct node_tag * free_next;
-  struct node_tag * free_prev;
-
   //how many bytes requested by the user
   size_t size;
   //1-> these bytes are used, 0-> available for use
