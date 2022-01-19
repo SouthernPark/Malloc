@@ -465,5 +465,5 @@ usable free space + space occupied by meta-data
 */
 
 unsigned long get_data_segment_free_space_size() {
-  return 100;
+  return free_space;
 }
