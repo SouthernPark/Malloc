@@ -400,7 +400,8 @@ void my_free(void * ptr) {
   free_space += n->size;
 
   //3. check whether the free_head is NULL
-  if (free_head == NULL) {
+  if (free_head == NULL || free_tail == NULL) {
+    n->used = 0;
     free_head = n;
     free_tail = n;
     return;
@@ -429,8 +430,6 @@ void my_free(void * ptr) {
     // replace next free node in free List with n
     freeListReplace(n, next);
     n->used = 0;
-    //bacuse we merge a node, then free space will be added
-    free_space += sizeof(node_t);
   }
 
   //4. check whether the previous node is free
@@ -444,9 +443,6 @@ void my_free(void * ptr) {
       //n is in the free list, remove it
       freeListRemove(n);
     }
-
-    //bacuse we merge a node, then free space will be added
-    free_space += sizeof(node_t);
   }
 }
 
