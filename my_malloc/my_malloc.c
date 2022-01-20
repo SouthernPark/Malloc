@@ -111,8 +111,6 @@ node_t * makeSpaceForNode() {
   //1. calling the sbrk to allocate sizeof(node_t) bytes
   void * prev_brk = my_sbrk(sizeof(node_t));
 
-  free_space += sizeof(node_t);  //node space is counted as free space
-
   node_t * n = (node_t *)prev_brk;
 
   //2. set up the node
@@ -281,7 +279,7 @@ void * splitNode(node_t * n, size_t size) {
     //e. replace node n in free list with node split
     freeListReplace(split, n);
 
-    free_space -= size;
+    free_space -= size + sizeof(node_t);
   }
   else {
     //Too small to split
@@ -291,7 +289,7 @@ void * splitNode(node_t * n, size_t size) {
 
     //2. remove free node n from free list
     freeListRemove(n);
-    free_space -= n->size;
+    free_space -= n->size + sizeof(node_t);
   }
 
   //return the address the user requests
@@ -377,7 +375,7 @@ The change of the heap size will be accumulated into the global
 variable heap_size                                                   
 */
 
-void * my_sbrk(intptr_t increment) {
+void * my_sbrk(int increment) {
   heap_size += increment;
 
   return sbrk(increment);
@@ -397,7 +395,7 @@ void my_free(void * ptr) {
   //2. set the status of the node to unused
 
   //because node n is freed, increase the free space
-  free_space += n->size;
+  free_space += n->size + sizeof(node_t);
 
   //3. check whether the free_head is NULL
   if (free_head == NULL || free_tail == NULL) {

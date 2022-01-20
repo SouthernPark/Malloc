@@ -134,7 +134,7 @@ The change of the heap size will be accumulated into the global
 variable heap_size
 */
 
-void * my_sbrk(intptr_t increment);
+void * my_sbrk(int increment);
 
 /*
 This function will help us free the allocated memo

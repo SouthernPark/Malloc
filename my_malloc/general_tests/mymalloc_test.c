@@ -24,10 +24,6 @@ int main(int argc, char * argv[]) {
   expected_sum += size * size;
   array[0] = (int *)MALLOC(size * sizeof(int));
 
-  FREE(array[0]);
-
-  array[0] = (int *)MALLOC(size * sizeof(int));
-
   //mytest
   //node_t * n1 = ptrByteMove(array[0], sizeof(node_t), -1);
   node_t * n1 = (node_t *)((char *)array[0] - sizeof(node_t));
@@ -67,10 +63,17 @@ int main(int argc, char * argv[]) {
     sum += array[2][i];
   }  //for i
 
+  //mytest
+
+  FREE(array[0]);
+
+  FREE(array[2]);
+
+  FREE(array[1]);
+
   size = 32;
   expected_sum += size * size;
   array[3] = (int *)MALLOC(size * sizeof(int));
-  //mytest
 
   //node_t * n4 = ptrByteMove(array[3], sizeof(node_t), -1);
   node_t * n4 = (node_t *)((char *)array[3] - sizeof(node_t));
@@ -80,10 +83,6 @@ int main(int argc, char * argv[]) {
   for (i = 0; i < size; i++) {
     sum += array[3][i];
   }  //for i
-
-  FREE(array[1]);
-
-  FREE(array[2]);
 
   FREE(array[3]);
 
