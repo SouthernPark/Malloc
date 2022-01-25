@@ -155,3 +155,7 @@ Return the free space in the heap:
 usable free space + space occupied by meta-data
 */
 unsigned long get_data_segment_free_space_size();
+
+void printLinkedList();
+
+void printFreeLinkedList();

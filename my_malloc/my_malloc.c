@@ -111,6 +111,10 @@ node_t * makeSpaceForNode() {
   //1. calling the sbrk to allocate sizeof(node_t) bytes
   void * prev_brk = my_sbrk(sizeof(node_t));
 
+  if (prev_brk == NULL) {
+    return NULL;
+  }
+
   node_t * n = (node_t *)prev_brk;
 
   //2. set up the node
@@ -132,6 +136,10 @@ void * initLL(size_t size) {
 
   //2. make space for the request
   void * res = my_sbrk(size);
+
+  if (res == NULL) {
+    return NULL;
+  }
 
   //3. set the properties of the node
   n->size = size;
@@ -182,6 +190,9 @@ void * incr_heap(size_t size) {
 
   //2. make space for the user
   void * res = my_sbrk(size);
+  if (res == NULL) {
+    return NULL;
+  }
   n->size = size;
   n->used = 1;
 
@@ -376,9 +387,14 @@ variable heap_size
 */
 
 void * my_sbrk(int increment) {
-  heap_size += increment;
-
-  return sbrk(increment);
+  void * res = sbrk(increment);
+  if (res == (void *)(-1)) {
+    return NULL;
+  }
+  else {
+    heap_size += increment;
+    return res;
+  }
 }
 
 /*
@@ -387,6 +403,10 @@ This function will help us free the allocated memo
 2.When there is free node previous, we will merge this node with the previous node  
 */
 void my_free(void * ptr) {
+  if (ptr == NULL) {
+    return;
+  }
+
   //1. Get the corresponding node pointer
   //node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
 
@@ -460,4 +480,26 @@ usable free space + space occupied by meta-data
 
 unsigned long get_data_segment_free_space_size() {
   return free_space;
+}
+
+void printLinkedList() {
+  node_t * node = head;
+  while (node != NULL) {
+    printf("--------------------");
+    printf("%p", node->prev);
+    printf("%p", node->next);
+    printf("--------------------");
+    node = node->next;
+  }
+}
+
+void printFreeLinkedList() {
+  node_t * node = free_head;
+  while (node != NULL) {
+    printf("--------------------");
+    printf("%p", node->prev);
+    printf("%p", node->next);
+    printf("--------------------");
+    node = node->free_next;
+  }
 }

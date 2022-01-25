@@ -19,7 +19,7 @@ int main(int argc, char * argv[]) {
   int sum = 0;
   int expected_sum = 0;
   int * array[NUM_ITEMS];
-
+  int size_of_node = sizeof(node_t);
   size = 4;
   expected_sum += size * size;
   array[0] = (int *)MALLOC(size * sizeof(int));
@@ -66,6 +66,9 @@ int main(int argc, char * argv[]) {
   //mytest
 
   FREE(array[0]);
+
+  printLinkedList();
+  printFreeLinkedList();
 
   FREE(array[2]);
 
