@@ -67,8 +67,8 @@ int main(int argc, char * argv[]) {
 
   FREE(array[0]);
 
-  printLinkedList();
-  printFreeLinkedList();
+  //printLinkedList();
+  //printFreeLinkedList();
 
   FREE(array[2]);
 

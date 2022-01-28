@@ -13,9 +13,6 @@ status of heap memo
 node_t * head = NULL;
 node_t * tail = NULL;
 
-node_t * free_head = NULL;
-node_t * free_tail = NULL;
-
 unsigned long heap_size = 0;
 unsigned long free_space = 0;
 
@@ -24,49 +21,138 @@ This function will implement the malloc function with the first fit policy
 When finding the available space, we return the one that we first match.
 */
 void * ff_malloc(size_t size) {
-  //1. check if empty (check whether the Linked List is null)
-  if (head == NULL) {
-    //intially set the head and tail of the linked list
+  //1. search in the LinkedList to find if there is any free space
+  node_t * fit = first_fit(size);
 
-    return initLL(size);
+  if (fit == NULL) {
+    //we do not find a free node, we need allocate more heap space
+
+    //totally we need alloc size + sizeof(node_t) space
+
+    size_t total = size + sizeof(node_t);
+
+    void * sbr = my_sbrk(total);
+
+    if (sbr == NULL) {
+      return NULL;
+    }
+
+    node_t * node = (node_t *)sbr;
+
+    node->size = size;
+    node->prev = NULL;
+    node->next = NULL;
+
+    return (sbr + sizeof(node_t));
+  }
+  else {
+    //we have a fit, check if we need to split the node
+    if ((fit->size - size) <= sizeof(node_t)) {
+      //the node fit is too small to split
+      //just remove the node from the free list
+      removeLL(fit);
+      free_space -= (sizeof(node_t) + fit->size);
+      return (((void *)fit) + sizeof(node_t));
+    }
+    else {
+      //split the node
+      return splitNode(fit, size);
+    }
   }
 
-  //2. search for the first fit
-  node_t * first = first_fit(size);
-  if (first != NULL) {
-    //split the first matched node
-    //and return the address of space that the user requested
-    return splitNode(first, size);
+  return NULL;
+}
+
+void * splitNode(node_t * node, size_t size) {
+  void * ptr = (void *)node;
+
+  node_t * split = (node_t *)(ptr + sizeof(node_t) + size);
+
+  //set split node
+  split->size = node->size - size - sizeof(node_t);
+  split->next = NULL;
+  split->prev = NULL;
+
+  node->size = size;
+
+  if (head == node && tail == node) {
+    head = split;
+    tail = split;
+  }
+  else if (head == node) {
+    split->next = head->next;
+    head->next->prev = split;
+    head = split;
+  }
+  else if (tail == node) {
+    split->prev = tail->prev;
+    tail->prev->next = split;
+    tail = split;
+  }
+  else {
+    split->prev = node->prev;
+    split->next = node->next;
+
+    node->prev->next = split;
+    node->next->prev = split;
   }
 
-  //else first == NULL, which means there is no fit
-  //we have to increase the heap
-  void * address = incr_heap(size);
-  return address;
+  node->next = NULL;
+  node->prev = NULL;
+
+  free_space -= (size + sizeof(node_t));
+  return (ptr + sizeof(node_t));
 }
 
 void ff_free(void * ptr) {
   my_free(ptr);
 }
+
+/*                                                                                   
+This function will implement the malloc function with the first fit policy           
+When finding the available space, we return the one that we first match.             
+*/
 void * bf_malloc(size_t size) {
-  //1. check if empty (check whether the Linked List is null)
-  if (head == NULL) {
-    //intially set the head and tail of the linked list
-    return initLL(size);
+  //1. search in the LinkedList to find if there is any free space
+  node_t * fit = best_fit(size);
+
+  if (fit == NULL) {
+    //we do not find a free node, we need allocate more heap space
+
+    //totally we need alloc size + sizeof(node_t) space
+
+    size_t total = size + sizeof(node_t);
+
+    void * sbr = my_sbrk(total);
+
+    if (sbr == NULL) {
+      return NULL;
+    }
+
+    node_t * node = (node_t *)sbr;
+
+    node->size = size;
+    node->prev = NULL;
+    node->next = NULL;
+
+    return (sbr + sizeof(node_t));
+  }
+  else {
+    //we have a fit, check if we need to split the node
+    if ((fit->size - size) <= sizeof(node_t)) {
+      //the node fit is too small to split
+      //just remove the node from the free list
+      removeLL(fit);
+      free_space -= (sizeof(node_t) + fit->size);
+      return (((void *)fit) + sizeof(node_t));
+    }
+    else {
+      //split the node
+      return splitNode(fit, size);
+    }
   }
 
-  //2. search for the best fit
-  node_t * best = best_fit(size);
-  if (best != NULL) {
-    //split the first matched node
-    //and return the address of space that the user requested
-    return splitNode(best, size);
-  }
-
-  //else first == NULL, which means there is no fit
-  //we have to increase the heap
-  void * address = incr_heap(size);
-  return address;
+  return NULL;
 }
 
 /*                                                                          
@@ -79,76 +165,29 @@ void * bf_malloc(size_t size) {
 
 */
 node_t * best_fit(size_t size) {
-  if (head == NULL) {
-    return NULL;
-  }
+  node_t * cur = head;
 
-  node_t * best = NULL;
-  int difference = MAX_INT;
+  int best = 2147483647;
+  node_t * res = NULL;
 
-  node_t * cur = free_head;
   while (cur != NULL) {
     if (cur->size == size) {
       return cur;
     }
-    else if (cur->size > size && cur->size - size < difference) {
-      best = cur;
-      difference = cur->size - size;
+
+    if (cur->size > size && cur->size - size < best) {
+      res = cur;
+      best = cur->size - size;
     }
-    cur = cur->free_next;
+
+    cur = cur->next;
   }
 
-  return best;
+  return res;
 }
 
 void bf_free(void * ptr) {
   my_free(ptr);
-}
-
-//This function will allocate new space to hold the node
-//return the pointer to the node
-node_t * makeSpaceForNode() {
-  //1. calling the sbrk to allocate sizeof(node_t) bytes
-  void * prev_brk = my_sbrk(sizeof(node_t));
-
-  if (prev_brk == NULL) {
-    return NULL;
-  }
-
-  node_t * n = (node_t *)prev_brk;
-
-  //2. set up the node
-
-  n->prev = NULL;
-  n->next = NULL;
-  n->free_prev = NULL;
-  n->free_next = NULL;
-
-  //3. return the pointer to the beginning of the node
-  return n;
-}
-
-//this function is used when malloc is called for the first time
-//we init the Linked List as the current program break
-void * initLL(size_t size) {
-  //1. make space for the node
-  node_t * n = makeSpaceForNode();
-
-  //2. make space for the request
-  void * res = my_sbrk(size);
-
-  if (res == NULL) {
-    return NULL;
-  }
-
-  //3. set the properties of the node
-  n->size = size;
-  n->used = 1;
-
-  head = n;
-  tail = n;
-
-  return res;
 }
 
 /*
@@ -160,224 +199,128 @@ void * initLL(size_t size) {
   else:  return NULL
 */
 node_t * first_fit(size_t size) {
-  if (head == NULL) {
-    return NULL;
-  }
-  //search in the free list
-  node_t * cur = free_head;
-
+  node_t * cur = head;
   while (cur != NULL) {
-    if (cur->used == 0 && cur->size >= size) {
-      //return the first fit
+    if (cur->size >= size) {
       return cur;
     }
-    //else move to the next node
-    cur = cur->free_next;
+    cur = cur->next;
   }
-  //we are here beacause cur == NULL, which means there is no fit
 
   return cur;
 }
 
-/*
-this function will be called when there is no fit found in the heap   
-and we have to increase the heap to give the user requested memo      
-return the address of the space requested by the user                 
-*/
-void * incr_heap(size_t size) {
-  //1. make space for node
-  node_t * n = makeSpaceForNode();
+int main(void) {
+  //test the first fit
+  node_t n1;
+  node_t n2;
+  node_t n3;
 
-  //2. make space for the user
-  void * res = my_sbrk(size);
-  if (res == NULL) {
-    return NULL;
-  }
-  n->size = size;
-  n->used = 1;
+  n1.next = &n2;
+  n2.next = &n3;
+  n3.next = NULL;
 
-  //3. add the node to the tail of Linked List
-  listAddToTail(n);
+  n3.prev = &n2;
+  n2.prev = &n1;
+  n1.prev = NULL;
 
-  //4. return the address requested by the user
-  return res;
-}
+  n1.size = 10;
+  n2.size = 12;
+  n3.size = 14;
 
-void listAddToTail(node_t * n) {
-  if (head == NULL) {
-    head = n;
-    tail = n;
-    return;
-  }
-  n->prev = tail;
-  tail->next = n;
-  n->next = NULL;
-  tail = n;
-}
+  head = &n1;
+  tail = &n3;
+  printf("------asserts---------\n");
 
-/*                                                  
-rRemove the node from the bookkeeping linked list   
-*/
-void listRemove(node_t * n) {
-  if (n == head && n == tail) {
-    head = NULL;
-    tail = NULL;
-  }
-  else if (n == head) {
-    head = head->next;
-    head->prev = NULL;
-    n->next = NULL;
-  }
-  else if (n == tail) {
-    tail = tail->prev;
-    tail->next = NULL;
-    n->prev = NULL;
-  }
-  else {
-    n->prev->next = n->next;
-    n->next->prev = n->prev;
-  }
-}
+  assert(first_fit(10) == &n1);
+  assert(first_fit(9) == &n1);
+  assert(first_fit(0) == &n1);
 
-/*
-Insert node n after target
-*/
+  assert(first_fit(12) == &n2);
+  assert(first_fit(11) == &n2);
 
-void listInsert(node_t * n, node_t * target) {
-  if (target == tail) {
-    //target is the tail
-    listAddToTail(n);
-  }
-  else {
-    //target is not the tail
-    n->prev = target;
-    n->next = target->next;
-    target->next->prev = n;
-    target->next = n;
-  }
-}
+  assert(first_fit(13) == &n3);
+  assert(first_fit(14) == &n3);
+  assert(first_fit(15) == NULL);
 
-/*                                                                            
-Because we find a matched space in the linkedlist, we now have to give the    
-space the user requested. Here are two cases:                                 
-    1. After we split the node, the rest of the space is too small to record  
-       In this situation, we just give the user the whole space, which means  
-       We do not split the node.                                              
-    2. Else the rest of the node is still very big, we can split the node     
-       And set the rest of the node as available.                             
-                                                                              
-    return: return the adrress of the space that the user requested.          
-*/
-void * splitNode(node_t * n, size_t size) {
-  //1. check whether the splited node is too small to record
-  if (n->size - size > sizeof(node_t)) {
-    //We can split
+  /*test mysbrk*/
+  void * cur = sbrk(0);
+  size_t cur_heap_size = heap_size;
+  void * res;
+  //1
+  assert(cur == my_sbrk(0));
+  assert(heap_size == cur_heap_size);
 
-    //a. get the pointer of the splited node
-    // node_t * split = (node_t *)(ptrByteMove(n, sizeof(node_t) + size, 1));
-    node_t * split = (node_t *)((char *)n + sizeof(node_t) + size);
+  //2
+  res = my_sbrk(10);
+  assert(res == cur);
+  cur += 10;
+  cur_heap_size += 10;
+  assert(cur == sbrk(0));
+  assert(heap_size == cur_heap_size);
 
-    //b. insert split after n in the bookeeping
-    listInsert(split, n);
+  //3
+  res = my_sbrk(100);
+  assert(res == cur);
+  cur += 100;
+  cur_heap_size += 100;
+  assert(cur == sbrk(0));
+  assert(heap_size == cur_heap_size);
 
-    //c. change the size and used property of n and split
+  /* Test add tail */
 
-    split->size = n->size - size - sizeof(node_t);
-    split->used = 0;  //split is free for use
-    n->size = size;
-    n->used = 1;  //n is now being used
+  head = NULL;
+  tail = NULL;
 
-    //e. replace node n in free list with node split
-    freeListReplace(split, n);
+  addTail(&n1);
+  assert(tail == &n1);
+  assert(head == &n1);
 
-    free_space -= size + sizeof(node_t);
-  }
-  else {
-    //Too small to split
+  addTail(&n2);
+  assert(tail == &n2);
+  assert(head->next == &n2);
 
-    //1. set to used
-    n->used = 1;
+  addTail(&n3);
+  assert(tail == &n3);
+  assert(head == &n1);
+  assert(head->next == &n2);
+  assert(head->next->next == &n3);
 
-    //2. remove free node n from free list
-    freeListRemove(n);
-    free_space -= n->size + sizeof(node_t);
+  /*Test ff_alloc*/
+  void * ff_cur = sbrk(0) + sizeof(node_t);
+  node_t * ff_res;
+  for (int i = 0; i < 10; i++) {
+    ff_res = ff_malloc(100);
+    assert(ff_cur == ff_res);
+
+    ff_cur += (100 + sizeof(node_t));
   }
 
-  //return the address the user requests
-  //return ptrByteMove(n, sizeof(node_t), 1);
-  return (node_t *)((char *)n + sizeof(node_t));
-}
+  /* Test remove */
+  removeLL(&n2);
+  assert(head == &n1);
+  assert(tail == &n3);
+  assert(head->next == tail);
+  assert(tail->prev == head);
+  assert(head->prev == NULL);
+  assert(tail->next == NULL);
 
-/*
-Replace the node target in the free List with node n
-*/
+  removeLL(&n1);
+  assert(head == &n3);
+  assert(tail == &n3);
 
-void freeListReplace(node_t * n, node_t * target) {
-  n->free_next = target->free_next;
-  n->free_prev = target->free_prev;
+  assert(tail->next == NULL);
+  assert(head->prev == NULL);
 
-  //target is the only element in the free list
-  if (target == free_head && target == free_tail) {
-    free_head = n;
-    free_tail = n;
-    free_head->free_prev = NULL;
-    free_tail->free_next = NULL;
-  }
-  else if (target == free_head) {
-    target->free_next->free_prev = n;
-    free_head = n;
-  }
-  else if (target == free_tail) {
-    target->free_prev->free_next = n;
-    free_tail = n;
-  }
-  else {
-    target->free_prev->free_next = n;
-    target->free_next->free_prev = n;
-  }
-}
+  removeLL(&n3);
+  assert(head == NULL);
+  assert(tail == NULL);
 
-/*
-Remove node n from the free list
-*/
+  /*test split the node*/
 
-void freeListRemove(node_t * n) {
-  if (n == free_head && n == free_tail) {
-    free_head = NULL;
-    free_tail = NULL;
-  }
-  else if (n == free_head) {
-    //move free head to the next
-    free_head = free_head->free_next;
-    free_head->free_prev = NULL;
-  }
-  else if (n == free_tail) {
-    //move the free tail to its prev node
-    free_tail = free_tail->free_prev;
-    free_tail->free_next = NULL;
-  }
-  else {
-    n->free_prev->free_next = n->free_next;
-    n->free_next->free_prev = n->free_prev;
-  }
-}
+  printf("-------all passed--------\n");
 
-/*
-Add to the tail of the free linked list
-*/
-
-void freeAddTail(node_t * n) {
-  if (free_head == NULL) {
-    free_head = n;
-    free_tail = n;
-    return;
-  }
-
-  n->free_prev = free_tail;
-  n->free_next = NULL;
-
-  free_tail->free_next = n;
-  free_tail = n;
+  return -1;
 }
 
 /*                                                                   
@@ -386,7 +329,7 @@ The change of the heap size will be accumulated into the global
 variable heap_size                                                   
 */
 
-void * my_sbrk(int increment) {
+void * my_sbrk(intptr_t increment) {
   void * res = sbrk(increment);
   if (res == (void *)(-1)) {
     return NULL;
@@ -403,65 +346,95 @@ This function will help us free the allocated memo
 2.When there is free node previous, we will merge this node with the previous node  
 */
 void my_free(void * ptr) {
-  if (ptr == NULL) {
+  //1. get the node
+  node_t * node = (node_t *)(ptr - sizeof(node_t));
+
+  if (head == NULL && tail == NULL) {
+    head = node;
+    tail = node;
     return;
   }
 
-  //1. Get the corresponding node pointer
-  //node_t * n = (node_t *)ptrByteMove(ptr, sizeof(node_t), -1);
+  //2. find the next free node after ptr
+  node_t * next = findGreater(node);
 
-  node_t * n = (node_t *)((char *)ptr - sizeof(node_t));
+  node_t * prev = NULL;
 
-  //2. set the status of the node to unused
+  free_space += (sizeof(node_t) + node->size);
 
-  //because node n is freed, increase the free space
-  free_space += n->size + sizeof(node_t);
+  //3.
+  if (next == NULL) {
+    //check the tail
+    prev = tail;
+  }
+  else {
+    //find the prev node
+    prev = next->prev;
+  }
 
-  //3. check whether the free_head is NULL
-  if (free_head == NULL || free_tail == NULL) {
-    n->used = 0;
-    free_head = n;
-    free_tail = n;
+  if (prev == NULL && next == NULL) {
+    head = node;
+    tail = node;
     return;
   }
 
-  //4. check whether the prev node and next node is free
+  //insert the node after prev
+  insertLL(prev, node);
 
-  node_t * next = n->next;
-  node_t * prev = n->prev;
-
-  //can not merge, both are not free
-  if ((prev == NULL || prev->used == 1) && (next == NULL || next->used == 1)) {
-    //add the free node to the end of free list
-    n->used = 0;
-    freeAddTail(n);
-    return;
+  //check for merge
+  //1. try to merge with the next
+  if (next != NULL && (void *)node + sizeof(node_t) + node->size == next) {
+    //we can merge by add the size of next to node
+    node->size += (next->size + sizeof(node_t));
+    //then delete the next
+    removeLL(next);
   }
 
-  //3. check whether the next node is free
+  //2. try to merge with the prev
+  if (prev != NULL && (void *)prev + sizeof(node_t) + prev->size == node) {
+    prev->size += (node->size + sizeof(node_t));
+    //then delete the node
+    removeLL(node);
+  }
+}
 
-  if (next != NULL && next->used == 0) {
-    //merge the next node into node n
-    n->size = n->size + sizeof(node_t) + next->size;
-    // remove the next node from book keeping
-    listRemove(next);
-    // replace next free node in free List with n
-    freeListReplace(n, next);
-    n->used = 0;
+/*
+This function will insert node after target 
+if target is NULL, then head and tail will be set to node
+*/
+
+void insertLL(node_t * target, node_t * node) {
+  if (target == NULL) {
+    node->next = head;
+    head->prev = node;
+    head = node;
+  }
+  else if (tail == target) {
+    //we just need to add it to tail
+    addTail(node);
+  }
+  else {
+    node_t * next = target->next;
+    node->next = next;
+    node->prev = target;
+    target->next = node;
+    next->prev = node;
+  }
+}
+
+/*
+This function will loop through the linked list to find the freee node that are 
+in the right and are just greater than node
+
+*/
+node_t * findGreater(node_t * node) {
+  node_t * cur = head;
+  while (cur != NULL && cur <= node) {
+    cur = cur->next;
   }
 
-  //4. check whether the previous node is free
-
-  if (prev != NULL && prev->used == 0) {
-    //merge node n into prev
-    prev->size = prev->size + sizeof(node_t) + n->size;
-    //remove node n from book keeping
-    listRemove(n);
-    if (n->used == 0) {
-      //n is in the free list, remove it
-      freeListRemove(n);
-    }
-  }
+  //now cur will just be NULL or a node thatis just greater than node
+  return cur;
 }
 
 /*                                              
@@ -493,13 +466,58 @@ void printLinkedList() {
   }
 }
 
-void printFreeLinkedList() {
-  node_t * node = free_head;
-  while (node != NULL) {
-    printf("--------------------");
-    printf("%p", node->prev);
-    printf("%p", node->next);
-    printf("--------------------");
-    node = node->free_next;
+void addTail(node_t * node) {
+  if (head == NULL || tail == NULL) {
+    assert(tail == NULL);
+    assert(head == NULL);
+    head = node;
+    tail = node;
+
+    return;
   }
+
+  assert(tail != NULL);
+
+  node->prev = tail;
+  tail->next = node;
+
+  tail = node;
+}
+
+void removeLL(node_t * node) {
+  if (head == NULL) {
+    assert(tail == NULL);
+    return;
+  }
+
+  if (node == head && node == tail) {
+    head = NULL;
+    tail = NULL;
+
+    return;
+  }
+
+  if (node == head) {
+    head = head->next;
+    head->prev = NULL;
+    node->next = NULL;
+    return;
+  }
+  else if (node == tail) {
+    tail = tail->prev;
+    tail->next = NULL;
+    node->prev = NULL;
+    return;
+  }
+
+  node_t * pr = node->prev;
+  node_t * nxt = node->next;
+
+  pr->next = nxt;
+  nxt->prev = pr;
+
+  node->next = NULL;
+  node->prev = NULL;
+
+  return;
 }
